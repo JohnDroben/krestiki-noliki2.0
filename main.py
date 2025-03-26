@@ -4,11 +4,41 @@ from tkinter import messagebox
 
 window = tk.Tk()
 window.title("Крестики-нолики")
-window.geometry("300x350")
+window.geometry("300x400")
+game_active = True
+scores = {"X": 0, "O": 0, "Draw": 0}
 
-
-curent_player = "X"
+current_player = "X"
 buttons = []
+
+
+def create_widgets():
+    reset_btn = tk.Button(window, text="Новая игра", font=("Arial", 14), command=reset_game)
+    reset_btn.grid(row=3, column=0, columnspan=3, pady=10)
+
+    global score_label
+    score_label = tk.Label(window,
+                         text=f"Игрок X: {scores['X']} | Игрок O: {scores['O']} | Ничьи: {scores['Draw']}",
+                         font=("Arial", 12))
+    score_label.grid(row=4, column=0, columnspan=3)
+
+    # Исправлено: вынесено из глобальной области видимости
+    for i in range(3):
+        row = []
+        for j in range(3):
+            btn = tk.Button(window, text="", font=("Arial", 20),
+                           width=5, height=2, command=lambda r=i, c=j: on_click(r, c))
+            btn.grid(row=i, column=j)
+            row.append(btn)
+        buttons.append(row)
+
+def update_score_display():
+    score_label.config(text=f"Игрок X: {scores['X']} | Игрок O: {scores['O']} | Ничьи: {scores['Draw']}")
+
+def disable_buttons():
+    for row in buttons:
+        for btn in row:
+            btn["state"] = "disabled"
 
 def check_win():
     for i in range(3):
@@ -22,39 +52,50 @@ def check_win():
         return True
     return False
 
+def check_draw():
+    for i in range(3):
+        for j in range(3):
+            if buttons[i][j]["text"] == "":
+                return False
+    return True
 
+# Исправлено: объединение дублированных функций
+def on_click(row, col):
+    global current_player, game_active
 
-def on_click (row,col):
-    global curent_player
-
-    if buttons[row][col]["text"] != "":
+    if not game_active or buttons[row][col]["text"] != "":
         return
 
-    buttons[row][col]["text"] = curent_player
+    buttons[row][col]["text"] = current_player
 
     if check_win():
-        messagebox.showinfo("Крестики-нолики", f"Победил игрок {buttons[row][col]['text']}")
+        scores[current_player] += 1
+        messagebox.showinfo("Победа!", f"Победил игрок {current_player}!")
+        game_active = False
+        disable_buttons()
+        update_score_display()
         return
 
-    curent_player = "O"if curent_player == "X" else "X"
+    if check_draw():
+        scores["Draw"] += 1
+        messagebox.showinfo("Ничья!", "Игра закончилась вничью!")
+        game_active = False
+        disable_buttons()
+        update_score_display()
+        return
 
+    # Исправлено: правильная смена игрока
+    current_player = "O" if current_player == "X" else "X"
 
-    buttons[row][col].config(text=curent_player)
+def reset_game():
+    global current_player, game_active
+    for i in range(3):
+        for j in range(3):
+            buttons[i][j]["text"] = ""
+            buttons[i][j]["state"] = "normal"
+    current_player = "X"
+    game_active = True
+    update_score_display()
 
-
-for i in range(3):
-   row = []
-   for j in range(3):
-        btn = tk.Button(window, text="", font=("Arial", 20), width=5, height=2, command=lambda r=i, c=j: on_click(r, c))
-        btn.grid(row=i, column=j)
-        row.append(btn)
-   buttons.append(row)
-
-
-
-
-
-
-
-
+create_widgets()
 window.mainloop()
